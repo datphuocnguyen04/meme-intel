@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memecoin Intel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">MEMECOIN INTEL</div>
+            <div class="tagline">Search by token name, ticker ($SYMBOL), or paste contract address for live metrics, tweets, and AI narrative.</div>
+        </header>
+
+        <div class="search-container">
+            <form class="search-form" id="search-form">
+                <div class="search-input-wrapper">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="contract-input" 
+                        placeholder="Search by token name, ticker ($PEPE), or contract address..."
+                        required
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <!-- Interactive Autocomplete Dropdown -->
+                    <div id="search-dropdown" class="search-dropdown" style="display: none;">
+                        <div id="search-dropdown-list" class="search-dropdown-list"></div>
+                    </div>
+                </div>
+                <button type="submit" class="search-btn" id="search-btn">Analyze Token</button>
+            </form>
+        </div>
+
+        <!-- Watchlist Section (Pinned & Tracked Coins) -->
+        <div id="watchlist-section" class="card watchlist-card" style="display: none;">
+            <div class="watchlist-header">
+                <div class="watchlist-title">
+                    <span style="font-size: 1.15rem;">⭐</span>
+                    <span style="font-weight: 700; font-size: 1rem; color: #f3f4f6;">Tracked Watchlist</span>
+                    <span id="watchlist-count" class="watchlist-count-badge">0</span>
+                </div>
+                <button type="button" id="refresh-watchlist-btn" class="refresh-btn-small" title="Refresh prices of all tracked coins">
+                    🔄 Refresh Prices
+                </button>
+            </div>
+            <div id="watchlist-items" class="watchlist-items-grid">
+                <!-- populated dynamically via JS -->
+            </div>
+        </div>
+
+        <div id="loading-state">
+            <div class="loading-text" id="loading-msg">Fetching token intel...</div>
+            <div class="card">
+                <div class="skeleton skel-header"></div>
+                <div class="metrics-grid">
+                    <div class="skeleton skel-metric"></div>
+                    <div class="skeleton skel-metric"></div>
+                    <div class="skeleton skel-metric"></div>
+                    <div class="skeleton skel-metric"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="skeleton skel-text"></div>
+                <div class="skeleton skel-text"></div>
+                <div class="skeleton skel-text short"></div>
+            </div>
+        </div>
+
+        <div id="error-state">
+            <div class="error-icon">😢</div>
+            <div class="error-message" id="error-msg">Something went wrong.</div>
+        </div>
+
+        <div id="results-area">
+            <!-- Token Info Card -->
+            <div class="card">
+                <!-- Live Auto-refresh control bar -->
+                <div class="live-refresh-bar">
+                    <div class="live-status">
+                        <span class="live-dot" id="live-dot"></span>
+                        <span id="live-text">Live Price: Auto-refreshing in <span id="countdown-sec" style="color: #60a5fa; font-weight: 700;">10</span>s</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button type="button" class="refresh-btn-small" id="toggle-refresh-btn">Pause</button>
+                        <button type="button" class="refresh-btn-small" id="manual-refresh-btn">⚡ Refresh Now</button>
+                    </div>
+                </div>
+
+                <div class="token-header">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <img 
+                            id="token-image" 
+                            src="" 
+                            alt="Token Logo" 
+                            title="Click to enlarge profile image"
+                            style="display: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.12); background: #1f1f2e; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" 
+                            onerror="this.style.display='none';"
+                        >
+                        <div class="token-title-area">
+                            <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+                                <h2>
+                                    <span id="token-name">Token Name</span>
+                                    <span class="chain-badge" id="chain-badge">CHAIN</span>
+                                </h2>
+                                <button type="button" id="watchlist-toggle-btn" class="watchlist-star-btn" title="Add to Watchlist">
+                                    <span id="star-icon">☆</span>
+                                    <span id="star-text">Watchlist</span>
+                                </button>
+                            </div>
+                            <div class="token-symbol" id="token-symbol">$SYMBOL</div>
+                            
+                            <!-- One-click Contract Address Copy Badge -->
+                            <div class="contract-copy-row" id="contract-copy-row" title="Click to copy contract address">
+                                <span class="contract-label">CA:</span>
+                                <span class="contract-address" id="contract-address-display">0x...</span>
+                                <button type="button" class="copy-contract-btn" id="copy-contract-btn" aria-label="Copy contract address">
+                                    <svg id="copy-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span id="copy-status-text">Copy</span>
+                                </button>
+                            </div>
+
+                            <div style="font-size: 0.8rem; color: #6b7280; margin-top: 0.35rem;">
+                                Created <span id="pair-age">...</span> • <span id="dex-name">DEX</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="price-display">
+                        <div class="price-value" id="token-price">$0.00</div>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-group">
+                        <h3>Market Cap</h3>
+                        <p id="mcap">-</p>
+                    </div>
+                    <div class="metric-group">
+                        <h3>FDV</h3>
+                        <p id="fdv">-</p>
+                    </div>
+                    <div class="metric-group">
+                        <h3>Total Supply</h3>
+                        <p id="total-supply">-</p>
+                    </div>
+                    <div class="metric-group">
+                        <h3>24h Volume</h3>
+                        <p id="volume">-</p>
+                        <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.25rem;">
+                            <span class="positive" id="buys">0</span> buys / <span class="negative" id="sells">0</span> sells
+                        </div>
+                    </div>
+                    <div class="metric-group">
+                        <h3>Liquidity</h3>
+                        <p id="liquidity">-</p>
+                    </div>
+                    <div class="metric-group">
+                        <h3>Buy Tax</h3>
+                        <p id="buy-tax" style="color: #10b981;">0%</p>
+                    </div>
+                    <div class="metric-group">
+                        <h3>Sell Tax</h3>
+                        <p id="sell-tax" style="color: #10b981;">0%</p>
+                    </div>
+                    
+                    <div class="metric-group" style="grid-column: 1 / -1;">
+                        <h3>Price Changes</h3>
+                        <div class="price-changes" id="price-changes-container">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="#" target="_blank" class="dex-link" id="dexscreener-link">View on DexScreener ↗</a>
+            </div>
+
+            <!-- Narrative Panel -->
+            <div class="card">
+                <div class="narrative-header-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+                    <div class="hype-meter-container" style="margin-bottom: 0;">
+                        <span class="hype-meter-label">Hype Level:</span>
+                        <span class="hype-badge" id="hype-badge">Unknown</span>
+                        <span id="confidence-badge" style="display:none; font-size: 0.75rem; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; color: #facc15; padding: 0.2rem 0.6rem; border-radius: 9999px; font-weight: 600;">⚠️ Unverified / Low Confidence Lore</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span id="x-updated-text" style="font-size: 0.78rem; color: #9ca3af;"></span>
+                        <button type="button" id="refresh-x-btn" class="refresh-btn-small" style="display: inline-flex; align-items: center; gap: 0.35rem;" title="Fetch fresh tweets from X and re-run AI narrative analysis">
+                            <span>🔄</span> <span id="refresh-x-btn-text">Refresh X Tweets &amp; Story</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="narrative-section">
+                    <h3>The Story</h3>
+                    <p id="narrative-story">...</p>
+                </div>
+
+                <div class="narrative-section">
+                    <h3>Recent Buzz</h3>
+                    <ul class="narrative-list" id="buzz-list">
+                    </ul>
+                </div>
+
+                <div class="narrative-section">
+                    <h3>Community Sentiment</h3>
+                    <p id="sentiment-text">...</p>
+                </div>
+
+                <div class="narrative-section" id="risk-section" style="display: none;">
+                    <h3>Risk Signals</h3>
+                    <ul class="narrative-list" id="risk-list">
+                    </ul>
+                </div>
+
+                <div class="tags-container" id="tags-container">
+                </div>
+            </div>
+
+            <!-- On-Chain Wallet Analytics Card -->
+            <div class="card" id="wallet-analytics-card" style="display: none;">
+                <div class="wallet-header-bar">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                        <span style="font-size: 1.25rem;">💰</span>
+                        <h3 style="font-size: 1.15rem; color: #e5e7eb; margin: 0; font-weight: 700;">On-Chain Wallet Analytics</h3>
+                        <span id="wallet-chain-badge" class="wallet-rpc-badge">Direct RPC</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                        <span id="wallet-updated-text" style="font-size: 0.78rem; color: #9ca3af;"></span>
+                        <button type="button" id="refresh-wallets-btn" class="refresh-btn-small" style="display: inline-flex; align-items: center; gap: 0.35rem;" title="Query fresh on-chain data directly from blockchain node">
+                            <span>🔄</span> <span id="refresh-wallets-btn-text">Refresh On-Chain</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="wallet-tabs-container">
+                    <div class="wallet-tabs">
+                        <button type="button" class="wallet-tab-btn active" id="tab-btn-traders">
+                            🏆 Top Traders &amp; PnL
+                        </button>
+                        <button type="button" class="wallet-tab-btn" id="tab-btn-holders">
+                            🐳 Top Holders
+                        </button>
+                    </div>
+                    <div id="wallet-tab-info" class="wallet-tab-info">
+                        Direct on-chain DEX swap execution analysis
+                    </div>
+                </div>
+
+                <!-- Tab Content: Traders -->
+                <div id="tab-content-traders" class="wallet-tab-content">
+                    <div class="wallet-table-responsive">
+                        <table class="wallet-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 6%;">#</th>
+                                    <th style="width: 26%;">Wallet</th>
+                                    <th style="width: 18%;">Volume</th>
+                                    <th style="width: 20%;">Transactions</th>
+                                    <th style="width: 22%;">Est. PnL</th>
+                                    <th style="width: 8%; text-align: right;">Links</th>
+                                </tr>
+                            </thead>
+                            <tbody id="traders-table-body">
+                                <tr><td colspan="6" class="wallet-loading-cell">Loading on-chain swap events...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Holders -->
+                <div id="tab-content-holders" class="wallet-tab-content" style="display: none;">
+                    <!-- Holders Supply & Wallet Summary Stat Bar -->
+                    <div id="holders-summary-bar" class="holders-summary-bar" style="display: none;">
+                        <div class="summary-stat-box">
+                            <span class="stat-label">Total Supply</span>
+                            <span id="summary-total-supply" class="stat-val">--</span>
+                        </div>
+                        <div class="summary-stat-box">
+                            <span class="stat-label">Total Holders</span>
+                            <span id="summary-total-holders" class="stat-val">--</span>
+                        </div>
+                        <div class="summary-stat-box" style="flex: 1.4;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="stat-label">Top Holders Hold</span>
+                                <span id="summary-supply-held-pct" class="stat-val" style="color: #60a5fa;">--%</span>
+                            </div>
+                            <div class="supply-bar-container" style="margin-top: 0.35rem;">
+                                <div id="summary-supply-bar" class="supply-bar-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="wallet-table-responsive">
+                        <table class="wallet-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 6%;">#</th>
+                                    <th style="width: 26%;">Wallet</th>
+                                    <th style="width: 20%;">Balance</th>
+                                    <th style="width: 24%;">% Supply</th>
+                                    <th style="width: 16%;">Value (USD)</th>
+                                    <th style="width: 8%; text-align: right;">Links</th>
+                                </tr>
+                            </thead>
+                            <tbody id="holders-table-body">
+                                <tr><td colspan="6" class="wallet-loading-cell">Loading on-chain holders...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Community Tweets Card -->
+            <div class="card" id="tweets-card" style="display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        <h3 style="font-size: 1.1rem; color: #e5e7eb; margin: 0;">Live Community Tweets</h3>
+                    </div>
+                    <span id="tweet-count-badge" style="font-size: 0.75rem; background: rgba(59, 130, 246, 0.15); border: 1px solid #3b82f6; color: #60a5fa; padding: 0.2rem 0.6rem; border-radius: 9999px; font-weight: 600;">0 tweets</span>
+                </div>
+                <div id="tweets-container" class="tweets-grid">
+                    <!-- populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Sources -->
+            <details class="sources-details" id="sources-details">
+                <summary class="sources-summary">Research Sources</summary>
+                <ul class="sources-list" id="sources-list">
+                </ul>
+            </details>
+        </div>
+    </div>
+
+    <!-- Profile & Image Popup Modal -->
+    <div id="image-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <button type="button" class="modal-close-btn" id="modal-close-btn" aria-label="Close popup">&times;</button>
+            <div class="modal-body">
+                <img id="modal-image" src="" alt="Profile Image" class="modal-img">
+                <div id="modal-caption" class="modal-caption"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Powered by DexScreener, SocialData.tools & Google Gemini | Data may be delayed
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+
+</body>
+</html>
