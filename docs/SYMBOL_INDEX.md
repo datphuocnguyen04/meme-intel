@@ -8,6 +8,8 @@ This file provides an index of all endpoints, Python functions, database operati
 
 | Endpoint | HTTP Method | Handler Function | Description |
 | :--- | :--- | :--- | :--- |
+| `/api/search` | `GET` | `search_tokens_endpoint` | Autocomplete & search tokens by ticker, name, or address (DexScreener API) |
+| `/api/watchlist` | `GET` | `get_watchlist` | Retrieve all bookmarked tokens saved in SQLite Watchlist |
 | `/api/token/{contract}` | `GET` | `get_token_intel` | Main token analysis with 3-tier caching (RAM -> SQLite -> Fresh) |
 | `/api/token/{contract}/price` | `GET` | `get_token_price_only` | Fast price and liquidity lookup (DexScreener) |
 | `/api/token/{contract}/holders` | `GET` | `get_top_holders_endpoint` | Top holders, total supply, total holders, and concentration |
@@ -38,6 +40,9 @@ This file provides an index of all endpoints, Python functions, database operati
 ### `backend/services/summarizer.py`
 - `summarize_narrative(name, symbol, token_data, social_data)`: Prompts Gemini 2.0 Flash to synthesize structured story, sentiment, hype level, and risk signals.
 
+### `backend/services/search.py`
+- `search_tokens(query, min_liquidity=500.0, limit=8)`: Searches tokens by ticker/name/address via DexScreener, filters low-liquidity spam, and caches results (60s TTL).
+
 ### `backend/services/cache.py`
 - `TTLCache`: In-memory thread-safe dictionary with expiry timestamps.
 
@@ -52,6 +57,7 @@ This file provides an index of all endpoints, Python functions, database operati
 - `get_top_traders(token_id)`: Loads cached trader snapshot.
 - `save_top_traders(token_id, traders_list)`: Replaces trader snapshot.
 - `set_watchlist_status(contract_address, is_watchlist, ...)`: Toggles watchlist status.
+- `get_watchlist_tokens()`: Retrieves all tokens marked in watchlist with their cached market stats.
 
 ---
 

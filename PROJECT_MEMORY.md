@@ -41,6 +41,7 @@ D:\meme-intel\
 │   │   ├── dexscreener.py          # Real-time token market data (DexScreener API)
 │   │   ├── holders_traders.py      # Direct on-chain RPC service (EVM & Solana)
 │   │   ├── http_client.py          # Unified Async HTTP Client with timeouts
+│   │   ├── search.py               # Token autocomplete & search via DexScreener
 │   │   ├── social.py               # Social search aggregator (X API + DDG fallback)
 │   │   ├── summarizer.py           # Gemini 2.0 Flash AI narrative synthesis
 │   │   └── twitter_search.py       # SocialData API v2 integration for X/Twitter
@@ -106,6 +107,8 @@ Defined in `backend/services/holders_traders.py`:
 
 | Method | Route | Description |
 | :--- | :--- | :--- |
+| `GET` | `/api/search?q={query}` | Autocomplete & search tokens by name, ticker, or address |
+| `GET` | `/api/watchlist` | Retrieve all tokens saved in SQLite Watchlist |
 | `GET` | `/api/token/{contract}` | Main token intel: market metrics, AI narrative, tweets (caches to SQLite) |
 | `GET` | `/api/token/{contract}/price` | Lightweight live price update (DexScreener API) |
 | `GET` | `/api/token/{contract}/holders?refresh={bool}` | Top holders, total supply, total holders & concentration |

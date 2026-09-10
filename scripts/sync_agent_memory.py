@@ -69,6 +69,10 @@ def main():
     repo_symbols = extract_python_symbols(repo_py)
     print(f"  ✓ Found {len(repo_symbols['functions'])} repository functions in token_repository.py")
 
+    search_py = os.path.join(BACKEND_DIR, "services", "search.py")
+    search_symbols = extract_python_symbols(search_py)
+    print(f"  ✓ Found {len(search_symbols['functions'])} functions in search.py")
+
     # 2. Scan Frontend JS
     app_js = os.path.join(FRONTEND_DIR, "js", "app.js")
     js_symbols = extract_js_symbols(app_js)
